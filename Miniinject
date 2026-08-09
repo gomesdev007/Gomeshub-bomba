@@ -251,7 +251,10 @@ AddScriptButton(
     "Gomes Hub Car Tycoon",
     "https://raw.githubusercontent.com/gomesdev007/Gomeshub-bomba/refs/heads/main/Hubcar.lua"
 )
-
+AddScriptButton(
+    "Gomes Cam ADM",
+    "https://raw.githubusercontent.com/gomesdev007/Gomeshub-bomba/refs/heads/main/Cam%20adm"
+)
 --==================================================
 -- TECLA B
 --==================================================
@@ -262,7 +265,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         return
     end
 
-    if input.KeyCode == Enum.KeyCode.B then
+    if input.KeyCode == Enum.KeyCode.x then
 
         MainFrame.Visible = not MainFrame.Visible
 
