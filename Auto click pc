@@ -1,11 +1,10 @@
---// Gomes Hub PC - V3
+--// Gomes PC AutoClick - V3
 --// Auto Click PC
---// Mesmo design da V2
+--// Intervalo: 0.20 segundo
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -22,7 +21,8 @@ else
 end
 
 -- Remove versão anterior
-local OldGui = ParentGui:FindFirstChild("GomesHubPC")
+local OldGui = ParentGui:FindFirstChild("GomesPCAutoClick")
+
 if OldGui then
     OldGui:Destroy()
 end
@@ -31,11 +31,11 @@ end
 -- GUI PRINCIPAL
 --==================================================
 
-local GomesHubPC = Instance.new("ScreenGui")
-GomesHubPC.Name = "GomesHubPC"
-GomesHubPC.ResetOnSpawn = false
-GomesHubPC.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-GomesHubPC.Parent = ParentGui
+local GomesPCAutoClick = Instance.new("ScreenGui")
+GomesPCAutoClick.Name = "GomesPCAutoClick"
+GomesPCAutoClick.ResetOnSpawn = false
+GomesPCAutoClick.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+GomesPCAutoClick.Parent = ParentGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -44,7 +44,7 @@ MainFrame.Position = UDim2.new(0.5, -150, 0.5, -60)
 MainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-MainFrame.Parent = GomesHubPC
+MainFrame.Parent = GomesPCAutoClick
 
 local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 12)
@@ -73,7 +73,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -15, 1, 0)
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Gomes hub pc auto click"
+Title.Text = "Gomes PC AutoClick [B to Toggle]"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.Font = Enum.Font.GothamBold
@@ -109,6 +109,7 @@ local startPos
 local dragInput
 
 local function UpdateDrag(input)
+
     if not dragging then
         return
     end
@@ -150,7 +151,6 @@ TopBar.InputChanged:Connect(function(input)
 
         dragInput = input
     end
-
 end)
 
 UserInputService.InputChanged:Connect(function(input)
@@ -158,26 +158,31 @@ UserInputService.InputChanged:Connect(function(input)
     if input == dragInput then
         UpdateDrag(input)
     end
-
 end)
 
+--==================================================
+-- AUTO CLICK
+--==================================================
 
 local AutoClickEnabled = false
-local CLICK_INTERVAL = 0.2
+local CLICK_INTERVAL = 0.20
 
--- APIs de clique disponíveis em alguns ambientes
 local function PerformClick()
 
     if typeof(mouse1click) == "function" then
+
         mouse1click()
         return true
+
     end
 
     if typeof(mouse1press) == "function"
         and typeof(mouse1release) == "function" then
 
         mouse1press()
+
         task.wait(0.03)
+
         mouse1release()
 
         return true
@@ -186,7 +191,10 @@ local function PerformClick()
     return false
 end
 
--
+--==================================================
+-- NÃO CLICAR NA NOSSA GUI
+--==================================================
+
 local function IsMouseOverOurGui()
 
     local mousePosition = UserInputService:GetMouseLocation()
@@ -205,9 +213,11 @@ local function IsMouseOverOurGui()
     return insideX and insideY
 end
 
+--==================================================
+-- TOGGLE
+--==================================================
 
-
-local function AddToggle(name, keyCode, callback)
+local function AddToggle(name, callback)
 
     local state = false
 
@@ -292,25 +302,27 @@ local function AddToggle(name, keyCode, callback)
     return Toggle
 end
 
--
+--==================================================
+-- AUTO CLICK TOGGLE
+--==================================================
+
 local AutoClickToggle = AddToggle(
-    "Auto Click PC",
-    Enum.KeyCode.X,
+    "Auto Click [X]",
     function(state)
-
         AutoClickEnabled = state
-
     end
 )
 
+--==================================================
+-- AUTO CLICK LOOP
+--==================================================
 
 task.spawn(function()
 
-    while GomesHubPC.Parent do
+    while GomesPCAutoClick.Parent do
 
         if AutoClickEnabled then
 
-            -- Não clica se o mouse estiver sobre nossa interface
             if not IsMouseOverOurGui() then
                 PerformClick()
             end
@@ -318,20 +330,16 @@ task.spawn(function()
             task.wait(CLICK_INTERVAL)
 
         else
+
             task.wait(0.1)
+
         end
-
     end
-
 end)
 
 --==================================================
 -- KEYBINDS
 --==================================================
-
-local Keybinds = {}
-
-Keybinds[Enum.KeyCode.X] = AutoClickToggle
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 
@@ -339,17 +347,17 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         return
     end
 
-    -- B abre/fecha
+    -- B = abrir/fechar
     if input.KeyCode == Enum.KeyCode.B then
+
         MainFrame.Visible = not MainFrame.Visible
+
         return
     end
 
-    -- X liga/desliga
-    local callback = Keybinds[input.KeyCode]
-
-    if callback then
-        callback()
+    -- X = Auto Click
+    if input.KeyCode == Enum.KeyCode.X then
+        AutoClickToggle()
     end
 
 end)
