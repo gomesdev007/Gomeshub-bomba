@@ -73,7 +73,7 @@ local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -15, 1, 0)
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Text = "Gomes hub pc [B to Toggle]"
+Title.Text = "Gomes hub pc auto click"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 14
 Title.Font = Enum.Font.GothamBold
@@ -161,12 +161,9 @@ UserInputService.InputChanged:Connect(function(input)
 
 end)
 
---==================================================
--- AUTO CLICK
---==================================================
 
 local AutoClickEnabled = false
-local CLICK_INTERVAL = 0.5
+local CLICK_INTERVAL = 0.2
 
 -- APIs de clique disponíveis em alguns ambientes
 local function PerformClick()
@@ -189,10 +186,7 @@ local function PerformClick()
     return false
 end
 
---==================================================
--- VERIFICAÇÃO DA GUI
---==================================================
-
+-
 local function IsMouseOverOurGui()
 
     local mousePosition = UserInputService:GetMouseLocation()
@@ -211,9 +205,7 @@ local function IsMouseOverOurGui()
     return insideX and insideY
 end
 
---==================================================
--- TOGGLE
---==================================================
+
 
 local function AddToggle(name, keyCode, callback)
 
@@ -300,12 +292,9 @@ local function AddToggle(name, keyCode, callback)
     return Toggle
 end
 
---==================================================
--- AUTO CLICK TOGGLE
---==================================================
-
+-
 local AutoClickToggle = AddToggle(
-    "Auto Click PC [X]",
+    "Auto Click PC",
     Enum.KeyCode.X,
     function(state)
 
@@ -314,9 +303,6 @@ local AutoClickToggle = AddToggle(
     end
 )
 
---==================================================
--- AUTO CLICK LOOP
---==================================================
 
 task.spawn(function()
 
