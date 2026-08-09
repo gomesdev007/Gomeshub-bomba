@@ -1,7 +1,8 @@
--- [[ GOMES CAR DEALERSHIP - DROPDOWN AUTO FARM EDITION ]]
+-- [[ GOMES CAR DEALERSHIP - DROPDOWN & ESP CARS EDITION ]]
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
 local LocalPlayer = Players.LocalPlayer
 
@@ -31,14 +32,14 @@ local OvalPositions = {
     [16] = Vector3.new(1185.54, 606.97, 2506.45),
 }
 
--- Posições Otimizadas do Deserto (38 Pontos)
+-- Posições Otimizadas do Deserto (Primeiras 6 Atualizadas)
 local DesertPositions = {
-    [1] = Vector3.new(118.30, 606.87, 2056.65),
-    [2] = Vector3.new(267.64, 606.87, 2612.89),
-    [3] = Vector3.new(294.46, 606.87, 2773.40),
-    [4] = Vector3.new(228.63, 606.87, 3292.19),
-    [5] = Vector3.new(205.66, 606.87, 3542.80),
-    [6] = Vector3.new(206.87, 606.87, 3815.66),
+    [1] = Vector3.new(142.42, 602.14, 2017.92),
+    [2] = Vector3.new(37.41, 602.15, 2161.58),
+    [3] = Vector3.new(140.86, 602.15, 2393.92),
+    [4] = Vector3.new(226.29, 602.15, 2489.18),
+    [5] = Vector3.new(305.99, 602.14, 2797.87),
+    [6] = Vector3.new(300.21, 602.14, 2883.21),
     [7] = Vector3.new(225.63, 607.33, 3886.13),
     [8] = Vector3.new(294.55, 606.87, 3941.19),
     [9] = Vector3.new(329.21, 606.87, 3983.81),
@@ -92,16 +93,26 @@ getfenv().speed = 300
 local selectedRaceMode = "Auto Farm Oval"
 local states = {
     autoFarm = false,
-    autoRace = false
+    autoRace = false,
+    espCars = false
 }
 
 local threads = {}
+local espLines = {}
 
 local function stopThread(name)
     if threads[name] then
         task.cancel(threads[name])
         threads[name] = nil
     end
+end
+
+-- Limpeza de ESP Lines
+local function clearEspLines()
+    for _, line in pairs(espLines) do
+        if line then line:Remove() end
+    end
+    espLines = {}
 end
 
 -- =======================================================================
@@ -114,8 +125,8 @@ ScreenGui.Parent = LocalPlayer.PlayerGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 230, 0, 240)
-MainFrame.Position = UDim2.new(0.5, -115, 0.5, -120)
+MainFrame.Size = UDim2.new(0, 230, 0, 280)
+MainFrame.Position = UDim2.new(0.5, -115, 0.5, -140)
 MainFrame.BackgroundColor3 = Color3.fromRGB(14, 10, 20)
 MainFrame.BorderSizePixel = 0
 MainFrame.ClipsDescendants = false
@@ -467,3 +478,49 @@ createToggle("Iniciar Auto Farm Corrida", function(state)
         end
     end)
 end)
+
+-- 4. ESP Cars (Tracer Lines do Pé do Personagem até os Veículos)
+createToggle("ESP Cars (Tracers)", function(state)
+    states.espCars = state
+
+    if not state then
+        clearEspLines()
+        return
+    end
+
+    threads["espCars"] = RunService.RenderStepped:Connect(function()
+        if not states.espCars then
+            clearEspLines()
+            return
+        end
+
+        local chr = LocalPlayer.Character
+        local root = chr and (chr:FindFirstChild("HumanoidRootPart") or chr:FindFirstChild("LeftFoot") or chr:FindFirstChild("RightFoot"))
+        local camera = workspace.CurrentCamera
+
+        if not root or not camera then
+            clearEspLines()
+            return
+        end
+
+        -- Posição do Pé em 3D e projeção 2D na Tela
+        local footPos3D = root.Position - Vector3.new(0, 2.5, 0)
+        local footPos2D, onScreenFoot = camera:WorldToViewportPoint(footPos3D)
+
+        local vehiclesContainer = workspace:FindFirstChild("Vehicles") or workspace:FindFirstChild("Cars") or workspace
+
+        for _, obj in ipairs(vehiclesContainer:GetChildren()) do
+            local isCar = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildOfClass("VehicleSeat") or obj:FindFirstChild("Body"))
+            
+            -- Evita colocar ESP no carro que o próprio jogador está pilotando
+            local mySeat = chr:FindFirstChild("Humanoid") and chr.Humanoid.SeatPart
+            if isCar and (not mySeat or not mySeat:IsDescendantOf(obj)) then
+                local carPart = obj.PrimaryPart or obj:FindFirstChildOfClass("VehicleSeat") or obj:FindFirstChildOfClass("BasePart")
+                if carPart then
+                    local carPos2D, onScreenCar = camera:WorldToViewportPoint(carPart.Position)
+
+                    if onScreenCar and onScreenFoot then
+                        local line = espLines[obj]
+                        if not line then
+                            line = Drawing.new("Line")
+                                    
