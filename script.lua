@@ -1,4 +1,4 @@
--- Gomes Hub PC - Versão Ultra Clean & Fixed
+-- Gomes Hub PC - Versão Ultimate (B to Toggle)
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -11,110 +11,123 @@ if ParentGui:FindFirstChild("GomesHubPC") then ParentGui.GomesHubPC:Destroy() en
 
 local ScreenGui = Instance.new("ScreenGui", ParentGui)
 ScreenGui.Name = "GomesHubPC"
-ScreenGui.ResetOnSpawn = false
 
--- Janela Principal (Compacta)
+-- Frame Principal
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 280, 0, 240)
-MainFrame.Position = UDim2.new(0.5, -140, 0.5, -120)
+MainFrame.Size = UDim2.new(0, 240, 0, 310)
+MainFrame.Position = UDim2.new(0.5, -120, 0.5, -155)
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
-
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
 Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(40, 40, 40)
 
--- Barra Superior (Drag corrigido)
+-- Barra Superior
 local TopBar = Instance.new("Frame", MainFrame)
-TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.Size = UDim2.new(1, 0, 0, 30)
 TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 12)
-
+Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 8)
 local Title = Instance.new("TextLabel", TopBar)
-Title.Size = UDim2.new(1, -10, 1, 0); Title.Position = UDim2.new(0, 10, 0, 0)
-Title.Text = "GOMES HUB PC"; Title.TextColor3 = Color3.fromRGB(200, 200, 200)
-Title.Font = Enum.Font.GothamBold; Title.TextSize = 12; Title.BackgroundTransparency = 1; Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Size = UDim2.new(1, 0, 1, 0); Title.Text = "GOMES HUB | B to Toggle"; Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold; Title.TextSize = 10; Title.BackgroundTransparency = 1
 
 -- Container
 local Container = Instance.new("ScrollingFrame", MainFrame)
-Container.Size = UDim2.new(1, -10, 1, -45); Container.Position = UDim2.new(0, 5, 0, 40)
+Container.Size = UDim2.new(1, -10, 1, -40); Container.Position = UDim2.new(0, 5, 0, 35)
 Container.BackgroundTransparency = 1; Container.ScrollBarThickness = 2
-Instance.new("UIListLayout", Container).Padding = UDim.new(0, 5)
+Instance.new("UIListLayout", Container).Padding = UDim.new(0, 4)
 
--- Sistema de Drag (Corrigido e Seguro)
+-- Sistema Drag
 local dragging, dragStart, startPos
-TopBar.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-    end
-end)
+TopBar.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; dragStart = i.Position; startPos = MainFrame.Position end end)
+UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then local delta = i.Position - dragStart; MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
 
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-end)
+-- Estados e Funções
+local States = {Speed = false, Jump = false, Noclip = false, ESP = false, Fly = false}
+local actions = {}
 
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end)
-
--- Funções Visuais (Hover Effect)
-local function CreateButton(name, isToggle, callback)
+local function CreateButton(text, key, callback)
     local btn = Instance.new("TextButton", Container)
-    btn.Size = UDim2.new(1, -5, 0, 30); btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    btn.Text = name; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham
-    btn.TextSize = 12; btn.AutoButtonColor = false
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.Size = UDim2.new(1, -4, 0, 28); btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    btn.Text = text; btn.TextColor3 = Color3.fromRGB(200, 200, 200); btn.Font = Enum.Font.Gotham; btn.TextSize = 11; btn.AutoButtonColor = false
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
     
-    local state = false
-    btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}):Play() end)
-    btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(25, 25, 25)}):Play() end)
-    
-    btn.MouseButton1Click:Connect(function()
-        if isToggle then
-            state = not state
-            btn.BackgroundColor3 = state and Color3.fromRGB(0, 100, 50) or Color3.fromRGB(25, 25, 25)
-        end
-        callback(state)
-    end)
-    return function() if isToggle then btn.MouseButton1Click:Fire() end end
+    local active = false
+    local function Toggle()
+        active = not active
+        btn.BackgroundColor3 = active and Color3.fromRGB(0, 100, 50) or Color3.fromRGB(25, 25, 25)
+        callback(active)
+    end
+    btn.MouseButton1Click:Connect(Toggle)
+    actions[key] = Toggle
 end
 
--- Lógica das funções
-local Speed, Jump, Noclip, ESP = false, false, false, false
+-- Lógicas
+local bv, bg
+local function ToggleFly(on)
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    if on then
+        bv = Instance.new("BodyVelocity", LocalPlayer.Character.HumanoidRootPart); bv.MaxForce = Vector3.new(9e9, 9e9, 9e9); bv.Velocity = Vector3.new(0,0,0)
+        bg = Instance.new("BodyGyro", LocalPlayer.Character.HumanoidRootPart); bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9); bg.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+    else
+        if bv then bv:Destroy() end; if bg then bg:Destroy() end
+    end
+end
 
-local triggers = {
-    X = CreateButton("Super Velocidade [X]", true, function(s) Speed = s end),
-    Z = CreateButton("Pulo Infinito [Z]", true, function(s) Jump = s end),
-    C = CreateButton("Modo ADM [C]", true, function(s) Noclip = s end),
-    V = CreateButton("Olho Supremo [V]", true, function(s) ESP = s end),
-    T = CreateButton("TP Supremo [T]", false, function()
-        local c, d = nil, math.huge
+-- Criação dos Botões
+CreateButton("Velocidade [X]", "X", function(s) States.Speed = s end)
+CreateButton("Pulo Infinito [Z]", "Z", function(s) States.Jump = s end)
+CreateButton("Modo ADM [C]", "C", function(s) 
+    States.Noclip = s 
+    if not s and LocalPlayer.Character then for _, p in pairs(LocalPlayer.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = true end end end
+end)
+CreateButton("Olho Supremo [V]", "V", function(s) 
+    States.ESP = s
+    if not s then for _, h in pairs(ParentGui:GetDescendants()) do if h:IsA("Highlight") then h:Destroy() end end end
+end)
+CreateButton("Modo Voo [F]", "F", function(s) States.Fly = s; ToggleFly(s) end)
+CreateButton("TP Supremo [T]", "T", function()
+    local c, dist = nil, math.huge
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+            if d < dist then c = p; dist = d end
+        end
+    end
+    if c then LocalPlayer.Character.HumanoidRootPart.CFrame = c.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3) end
+end)
+
+-- Main Loops
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    if not char then return end
+    if States.Speed and char:FindFirstChild("Humanoid") then char.Humanoid.WalkSpeed = 23 end
+    if States.Noclip then for _, p in pairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
+    if States.Fly and bv then
+        local move = Vector3.new(0,0,0); local cam = workspace.CurrentCamera.CFrame.LookVector
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then move = move + cam end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then move = move - cam end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then move = move - workspace.CurrentCamera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then move = move + workspace.CurrentCamera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0,1,0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then move = move - Vector3.new(0,1,0) end
+        bv.Velocity = move * 50
+    end
+    if States.ESP then
         for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local dist = (LocalPlayer.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                if dist < d then c = p; d = dist end
+            if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("Highlight") then
+                local h = Instance.new("Highlight", p.Character); h.FillColor = Color3.fromRGB(255, 0, 0)
             end
         end
-        if c then LocalPlayer.Character.HumanoidRootPart.CFrame = c.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,3) end
-    end)
-}
-
--- Loops de Ação
-RunService.Stepped:Connect(function()
-    local char = LocalPlayer.Character
-    if char and char:FindFirstChild("Humanoid") then
-        if Speed then char.Humanoid.WalkSpeed = 23 end
-        if Noclip then for _, p in pairs(char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
     end
 end)
 
-UserInputService.JumpRequest:Connect(function() if Jump then LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end)
+UserInputService.JumpRequest:Connect(function() if States.Jump then LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end)
 
+-- Keybinds (B para ocultar)
 UserInputService.InputBegan:Connect(function(inp, gpe)
-    if not gpe and triggers[inp.KeyCode.Name] then triggers[inp.KeyCode.Name]() end
+    if gpe then return end
+    if inp.KeyCode == Enum.KeyCode.B then MainFrame.Visible = not MainFrame.Visible end
+    if actions[inp.KeyCode.Name] then actions[inp.KeyCode.Name]() end
 end)
