@@ -1,4 +1,4 @@
--- [[ GOMES CAR DEALERSHIP - DROPDOWN & ESP CARS EDITION ]]
+-- [[ GOMES CAR DEALERSHIP - UNIVERSAL XENO PC & MOBILE EDITION ]]
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
@@ -32,7 +32,7 @@ local OvalPositions = {
     [16] = Vector3.new(1185.54, 606.97, 2506.45),
 }
 
--- Posições Otimizadas do Deserto (Primeiras 6 Atualizadas)
+-- Posições do Deserto
 local DesertPositions = {
     [1] = Vector3.new(142.42, 602.14, 2017.92),
     [2] = Vector3.new(37.41, 602.15, 2161.58),
@@ -79,16 +79,18 @@ if LocalPlayer.PlayerGui:FindFirstChild("GomesCarDealership") then
     LocalPlayer.PlayerGui.GomesCarDealership:Destroy()
 end
 
--- Anti-AFK integrado
+-- Anti-AFK
 LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
     task.wait(1)
     VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
 end)
 
--- Estados Globais
-getfenv().grav = workspace.Gravity
-getfenv().speed = 300
+-- Configurações Globais
+local config = {
+    gravity = workspace.Gravity,
+    speed = 300
+}
 
 local selectedRaceMode = "Auto Farm Oval"
 local states = {
@@ -102,15 +104,19 @@ local espLines = {}
 
 local function stopThread(name)
     if threads[name] then
-        task.cancel(threads[name])
+        pcall(function() threads[name]:Disconnect() end)
+        pcall(function() task.cancel(threads[name]) end)
         threads[name] = nil
     end
 end
 
--- Limpeza de ESP Lines
 local function clearEspLines()
     for _, line in pairs(espLines) do
-        if line then line:Remove() end
+        if typeof(line) == "Instance" then
+            line:Destroy()
+        elseif type(line) == "table" or type(line) == "userdata" then
+            pcall(function() line:Remove() end)
+        end
     end
     espLines = {}
 end
@@ -121,7 +127,16 @@ end
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "GomesCarDealership"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = LocalPlayer.PlayerGui
+
+-- Suporte universal para inserção de UI
+if gethui then
+    ScreenGui.Parent = gethui()
+elseif syn and syn.protect_gui then
+    syn.protect_gui(ScreenGui)
+    ScreenGui.Parent = LocalPlayer.PlayerGui
+else
+    ScreenGui.Parent = LocalPlayer.PlayerGui
+end
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -171,7 +186,17 @@ UIList.SortOrder = Enum.SortOrder.LayoutOrder
 local UIPadding = Instance.new("UIPadding", Container)
 UIPadding.PaddingTop = UDim.new(0, 10)
 
--- Sistema de Arrasto da Janela
+-- Tecla B para fechar/abrir a GUI no PC
+local isGuiVisible = true
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.B then
+        isGuiVisible = not isGuiVisible
+        MainFrame.Visible = isGuiVisible
+    end
+end)
+
+-- Sistema de Arrasto
 local dragging, dragStart, startPos
 Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -229,7 +254,7 @@ local function createToggle(name, callback)
     return btn
 end
 
--- Criador de Input de Velocidade com Limite em 400
+-- Criador de Input de Velocidade
 local function createInput(placeholder, callback)
     local box = Instance.new("TextBox", Container)
     box.Size = UDim2.new(0, 210, 0, 30)
@@ -326,24 +351,21 @@ end
 -- [[ CONTROLES E FUNÇÕES NA GUI ]]
 -- =======================================================================
 
--- Campo de Velocidade
 createInput("Velocidade (Max: 400 | Padrão 300)", function(val)
-    getfenv().speed = val or 300
+    config.speed = val or 300
 end)
 
--- 1. Auto Farm Drive
+-- Auto Farm Drive
 createToggle("Auto Farm Drive", function(state)
     states.autoFarm = state
-    getfenv().auto = state
-
     if not state then
         stopThread("autoFarm")
-        workspace.Gravity = getfenv().grav
+        workspace.Gravity = config.gravity
         return
     end
 
     threads["autoFarm"] = task.spawn(function()
-        workspace.Gravity = getfenv().grav
+        workspace.Gravity = config.gravity
         local currentTargetIdx = 2
 
         while states.autoFarm do
@@ -366,7 +388,7 @@ createToggle("Auto Farm Drive", function(state)
                 car.PrimaryPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 
                 local dist = (startPos - targetPos).Magnitude
-                local spd = math.min(getfenv().speed or 300, 400)
+                local spd = math.min(config.speed or 300, 400)
                 local duration = dist / spd
 
                 local TweenInfoToUse = TweenInfo.new(duration, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, 0, false, 0)
@@ -394,15 +416,14 @@ createToggle("Auto Farm Drive", function(state)
     end)
 end)
 
--- 2. Dropdown para selecionar a Pista de Corrida
+-- Dropdown de Seleção de Pistas
 createDropdown("Pista", {"Auto Farm Oval", "Auto Farm Deserto"}, function(selected)
     selectedRaceMode = selected
 end)
 
--- 3. Botão Iniciar Auto Farm Corrida (Lida com Oval e Deserto)
+-- Botão de Início de Auto Farm Corrida
 createToggle("Iniciar Auto Farm Corrida", function(state)
     states.autoRace = state
-
     if not state then
         stopThread("autoRace")
         return
@@ -420,13 +441,11 @@ createToggle("Iniciar Auto Farm Corrida", function(state)
                 if not car or not car.PrimaryPart then return end
 
                 local trackPositions = (selectedRaceMode == "Auto Farm Deserto") and DesertPositions or OvalPositions
-                local spd = math.min(getfenv().speed or 300, 400)
+                local spd = math.min(config.speed or 300, 400)
 
                 local currentPos = trackPositions[currentPosition]
                 local nextPosition = currentPosition + 1
-                if nextPosition > #trackPositions then
-                    nextPosition = 1
-                end
+                if nextPosition > #trackPositions then nextPosition = 1 end
                 local nextPos = trackPositions[nextPosition]
 
                 local adjustedCurrentPos = currentPos + Vector3.new(0, 1.5, 0)
@@ -466,7 +485,6 @@ createToggle("Iniciar Auto Farm Corrida", function(state)
                 car.PrimaryPart.AssemblyLinearVelocity = direction * spd
                 currentPosition = nextPosition
 
-                -- Pausa de 1 segundo se for a volta completa no deserto (ou 0.5s para o oval)
                 if currentPosition == 1 then
                     if selectedRaceMode == "Auto Farm Deserto" then
                         task.wait(1)
@@ -479,14 +497,16 @@ createToggle("Iniciar Auto Farm Corrida", function(state)
     end)
 end)
 
--- 4. ESP Cars (Tracer Lines do Pé do Personagem até os Veículos)
+-- ESP Cars (Com suporte nativo Xeno / Drawing Fallback)
 createToggle("ESP Cars (Tracers)", function(state)
     states.espCars = state
-
     if not state then
+        stopThread("espCars")
         clearEspLines()
         return
     end
+
+    local canUseDrawing = pcall(function() return Drawing.new("Line") end)
 
     threads["espCars"] = RunService.RenderStepped:Connect(function()
         if not states.espCars then
@@ -494,33 +514,23 @@ createToggle("ESP Cars (Tracers)", function(state)
             return
         end
 
-        local chr = LocalPlayer.Character
-        local root = chr and (chr:FindFirstChild("HumanoidRootPart") or chr:FindFirstChild("LeftFoot") or chr:FindFirstChild("RightFoot"))
-        local camera = workspace.CurrentCamera
+        pcall(function()
+            local chr = LocalPlayer.Character
+            local root = chr and (chr:FindFirstChild("HumanoidRootPart") or chr:FindFirstChild("LeftFoot") or chr:FindFirstChild("RightFoot"))
+            local camera = workspace.CurrentCamera
 
-        if not root or not camera then
-            clearEspLines()
-            return
-        end
+            if not root or not camera then
+                clearEspLines()
+                return
+            end
 
-        -- Posição do Pé em 3D e projeção 2D na Tela
-        local footPos3D = root.Position - Vector3.new(0, 2.5, 0)
-        local footPos2D, onScreenFoot = camera:WorldToViewportPoint(footPos3D)
+            local vehiclesContainer = workspace:FindFirstChild("Vehicles") or workspace:FindFirstChild("Cars") or workspace
 
-        local vehiclesContainer = workspace:FindFirstChild("Vehicles") or workspace:FindFirstChild("Cars") or workspace
-
-        for _, obj in ipairs(vehiclesContainer:GetChildren()) do
-            local isCar = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildOfClass("VehicleSeat") or obj:FindFirstChild("Body"))
-            
-            -- Evita colocar ESP no carro que o próprio jogador está pilotando
-            local mySeat = chr:FindFirstChild("Humanoid") and chr.Humanoid.SeatPart
-            if isCar and (not mySeat or not mySeat:IsDescendantOf(obj)) then
-                local carPart = obj.PrimaryPart or obj:FindFirstChildOfClass("VehicleSeat") or obj:FindFirstChildOfClass("BasePart")
-                if carPart then
-                    local carPos2D, onScreenCar = camera:WorldToViewportPoint(carPart.Position)
-
-                    if onScreenCar and onScreenFoot then
-                        local line = espLines[obj]
-                        if not line then
-                            line = Drawing.new("Line")
-                                    
+            for _, obj in ipairs(vehiclesContainer:GetChildren()) do
+                if obj:IsA("Model") then
+                    local carPart = obj.PrimaryPart or obj:FindFirstChildOfClass("VehicleSeat") or obj:FindFirstChildOfClass("BasePart")
+                    local mySeat = chr:FindFirstChild("Humanoid") and chr.Humanoid.SeatPart
+                    
+                    if carPart and (not mySeat or not mySeat:IsDescendantOf(obj)) then
+                        if canUseDrawing then
+                      
