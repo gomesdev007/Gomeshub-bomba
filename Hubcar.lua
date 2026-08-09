@@ -31,7 +31,7 @@ local OvalPositions = {
     [16] = Vector3.new(1185.54, 606.97, 2506.45),
 }
 
--- Posições do Deserto (Atualizadas com as 23 coordenadas novas)
+-- Posições do Deserto
 local DesertPositions = {
     [1] = Vector3.new(31.44, 606.87, 2164.14),
     [2] = Vector3.new(210.09, 606.87, 2446.89),
@@ -56,6 +56,12 @@ local DesertPositions = {
     [21] = Vector3.new(728.66, 606.82, 1093.66),
     [22] = Vector3.new(346.12, 606.87, 1543.88),
     [23] = Vector3.new(209.09, 606.87, 1933.02),
+}
+
+-- Posições da Arrancada (2 Pontos - Sem Repetição)
+local ArrancadaPositions = {
+    [1] = Vector3.new(1477.02, 604.30, 3274.48),
+    [2] = Vector3.new(1463.58, 604.32, 1514.12),
 }
 
 -- Limpeza de UI anterior
@@ -369,11 +375,11 @@ createToggle("Auto Farm Drive", function(state)
 end)
 
 -- 2. Dropdown para selecionar a Pista de Corrida
-createDropdown("Pista", {"Auto Farm Oval", "Auto Farm Deserto"}, function(selected)
+createDropdown("Pista", {"Auto Farm Oval", "Auto Farm Deserto", "Arrancada"}, function(selected)
     selectedRaceMode = selected
 end)
 
--- 3. Botão Iniciar Auto Farm Corrida (Lida com Oval e Deserto)
+-- 3. Botão Iniciar Auto Farm Corrida (Lida com Oval, Deserto e Arrancada)
 createToggle("Iniciar Auto Farm Corrida", function(state)
     states.autoRace = state
 
@@ -393,7 +399,13 @@ createToggle("Iniciar Auto Farm Corrida", function(state)
                 local car = chr.Humanoid.SeatPart.Parent.Parent
                 if not car or not car.PrimaryPart then return end
 
-                local trackPositions = (selectedRaceMode == "Auto Farm Deserto") and DesertPositions or OvalPositions
+                local trackPositions = OvalPositions
+                if selectedRaceMode == "Auto Farm Deserto" then
+                    trackPositions = DesertPositions
+                elseif selectedRaceMode == "Arrancada" then
+                    trackPositions = ArrancadaPositions
+                end
+
                 local spd = math.min(getfenv().speed or 300, 400)
 
                 local currentPos = trackPositions[currentPosition]
@@ -440,7 +452,13 @@ createToggle("Iniciar Auto Farm Corrida", function(state)
                 car.PrimaryPart.AssemblyLinearVelocity = direction * spd
                 currentPosition = nextPosition
 
-                -- Pausa de 1 segundo se for a volta completa no deserto (ou 0.5s para o oval)
+                -- Cancela a execução ao chegar na 2ª coordenada se for Arrancada
+                if selectedRaceMode == "Arrancada" then
+                    states.autoRace = false
+                    return
+                end
+
+                -- Pausa se for a volta completa no deserto ou no oval
                 if currentPosition == 1 then
                     if selectedRaceMode == "Auto Farm Deserto" then
                         task.wait(1)
