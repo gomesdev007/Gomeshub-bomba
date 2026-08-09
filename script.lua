@@ -1,4 +1,4 @@
--- Gomes Hub PC - Versão Retrô Integrada
+-- Gomes Hub PC 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -35,7 +35,7 @@ TopBar.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 TopBar.BorderSizePixel = 0
 local Title = Instance.new("TextLabel", TopBar)
 Title.Size = UDim2.new(1, -15, 1, 0); Title.Position = UDim2.new(0, 12, 0, 0)
-Title.BackgroundTransparency = 1; Title.Text = "Gomes hub pc [B to Toggle]"
+Title.BackgroundTransparency = 1; Title.Text = "Gomes hub pc "
 Title.TextColor3 = Color3.fromRGB(255, 255, 255); Title.TextSize = 14; Title.Font = Enum.Font.GothamBold; Title.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Container
@@ -110,12 +110,12 @@ local function ToggleFly(on)
 end
 
 -- Registro
-AddToggle("Velocidade [X]", "X", function(s) States.Speed = s; if not s and LocalPlayer.Character then LocalPlayer.Character.Humanoid.WalkSpeed = 16 end end)
-AddToggle("Pulo Infinito [Z]", "Z", function(s) States.Jump = s end)
-AddToggle("Modo ADM [C]", "C", function(s) States.Noclip = s; if not s and LocalPlayer.Character then for _,p in pairs(LocalPlayer.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = true end end end end)
-AddToggle("Olho Supremo [V]", "V", function(s) States.ESP = s; if not s then for _,p in pairs(Players:GetPlayers()) do if p.Character and p.Character:FindFirstChild("Highlight") then p.Character.Highlight:Destroy() end end end end)
-AddToggle("Modo Voo [F]", "F", function(s) States.Fly = s; ToggleFly(s) end)
-AddButton("TP Supremo [T]", "T", function()
+AddToggle("speed boost", "X", function(s) States.Speed = s; if not s and LocalPlayer.Character then LocalPlayer.Character.Humanoid.WalkSpeed = 16 end end)
+AddToggle("infinite jump", "Z", function(s) States.Jump = s end)
+AddToggle("noclip", "C", function(s) States.Noclip = s; if not s and LocalPlayer.Character then for _,p in pairs(LocalPlayer.Character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = true end end end end)
+AddToggle("chams", "V", function(s) States.ESP = s; if not s then for _,p in pairs(Players:GetPlayers()) do if p.Character and p.Character:FindFirstChild("Highlight") then p.Character.Highlight:Destroy() end end end end)
+AddToggle("fly", "F", function(s) States.Fly = s; ToggleFly(s) end)
+AddButton("TP", "T", function()
     local c, dist = nil, math.huge
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
