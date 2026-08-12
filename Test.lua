@@ -1,164 +1,182 @@
--- [[ CONFIGURAÇÃO DA INTERFACE DARK DINÂMICA COM BORDAS ARREDONDADAS ]]
+-- [[ GOMES HUB - AUTO EXECUTE MINI GUI ]]
+
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+-- Evita duplicar a GUI se executar mais de uma vez
+if CoreGui:FindFirstChild("GomesMiniGui") then
+    CoreGui.GomesMiniGui:Destroy()
+end
+
+-- ScreenGui Principal
 local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local MainCorner = Instance.new("UICorner") -- Bordas arredondadas da interface principal
-local Title = Instance.new("TextLabel")
-local Container = Instance.new("ScrollingFrame")
-local UIListLayout = Instance.new("UIListLayout")
-
--- Configurações da UI Principal
-ScreenGui.Name = "GomesDarkDynamicMenu"
-ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.Name = "GomesMiniGui"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = CoreGui
 
--- Janela Principal (Fixada na Esquerda, Fundo Preto Transparente, Sem Bordas de Cor Diferente)
+-- Frame Principal (Dark Theme)
+local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.BackgroundTransparency = 0.25
+MainFrame.Size = UDim2.new(0, 260, 0, 180)
+MainFrame.Position = UDim2.new(0.5, -130, 0.4, -90)
+MainFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 18) -- Dark Purple / Preto
 MainFrame.BorderSizePixel = 0
-MainFrame.Position = UDim2.new(0, 10, 0.3, 0)
--- Começa compacta para aguentar até 3 funções no máximo (Altura inicial: 120)
-MainFrame.Size = UDim2.new(0, 180, 0, 120) 
+MainFrame.Active = true
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
 
--- Aplicando cantos arredondados na janela principal
+-- Borda Arredondada MainFrame
+local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 8)
 MainCorner.Parent = MainFrame
 
--- Título Simples da GUI
-Title.Name = "Title"
-Title.Parent = MainFrame
+-- Topbar (Para arrastar)
+local Topbar = Instance.new("Frame")
+Topbar.Name = "Topbar"
+Topbar.Size = UDim2.new(1, 0, 0, 30)
+Topbar.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
+Topbar.BorderSizePixel = 0
+Topbar.Parent = MainFrame
+
+local TopbarCorner = Instance.new("UICorner")
+TopbarCorner.CornerRadius = UDim.new(0, 8)
+TopbarCorner.Parent = Topbar
+
+-- Título
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -60, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
 Title.BackgroundTransparency = 1
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Font = Enum.Font.SourceSansBold
-Title.Text = "GOMES HUB"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Text = "Gomes Hub - Mini"
+Title.TextColor3 = Color3.fromRGB(220, 220, 220)
 Title.TextSize = 13
-Title.TextXAlignment = Enum.TextXAlignment.Center
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Topbar
 
--- Container de Funções (Invisível e dinâmico)
-Container.Name = "Container"
-Container.Parent = MainFrame
-Container.BackgroundTransparency = 1
-Container.BorderSizePixel = 0
-Container.Position = UDim2.new(0, 5, 0, 32)
-Container.Size = UDim2.new(1, -10, 1, -37)
-Container.CanvasSize = UDim2.new(0, 0, 0, 0)
-Container.ScrollBarThickness = 0 -- Scroll invisível para manter o visual limpo
+-- Botão Minimizar (-)
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 25, 0, 25)
+MinimizeBtn.Position = UDim2.new(1, -30, 0, 2)
+MinimizeBtn.BackgroundTransparency = 1
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+MinimizeBtn.TextSize = 18
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.Parent = Topbar
 
-UIListLayout.Parent = Container
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Padding = UDim.new(0, 4)
+-- Lógica de Arrastar (Drag)
+local dragging, dragInput, dragStart, startPos
 
--- SISTEMA DE AUTO-AJUSTE DA JANELA PRINCIPAL:
--- Se tiver até 3 funções, ela fica pequena. A partir da 4ª, ela cresce sozinha!
-UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-    local alturaConteudo = UIListLayout.AbsoluteContentSize.Y
-    Container.CanvasSize = UDim2.new(0, 0, 0, alturaConteudo)
-    
-    -- Definição de tamanho base + tamanho do conteúdo das funções
-    local novaAlturaJanela = 35 + alturaConteudo + 10
-    
-    -- Se ultrapassar o tamanho de 3 funções, a GUI inteira expande para se adaptar
-    if novaAlturaJanela > 120 then
-        MainFrame.Size = UDim2.new(0, 180, 0, novaAlturaJanela)
-    else
-        MainFrame.Size = UDim2.new(0, 180, 0, 120) -- Mantém o tamanho mínimo padrão
-    end
-end)
-
--- [[ FUNÇÃO GERADORA DE BOTÕES COM BORDAS ARREDONDADAS ]]
-local function CriarBotao(nomeFuncao, callback)
-    local Estado = false
-
-    local ButtonFrame = Instance.new("Frame")
-    local ButtonCorner = Instance.new("UICorner") -- Cantos arredondados para a fileira
-    local TextBtn = Instance.new("TextButton")
-    local StatusIndicator = Instance.new("TextLabel")
-    local StatusCorner = Instance.new("UICorner") -- Cantos arredondados para o status indicador
-
-    -- Fundo do botão levemente visível para destacar a fileira
-    ButtonFrame.Name = nomeFuncao .. "_Frame"
-    ButtonFrame.Parent = Container
-    ButtonFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    ButtonFrame.BackgroundTransparency = 0.5
-    ButtonFrame.BorderSizePixel = 0
-    ButtonFrame.Size = UDim2.new(1, 0, 0, 24)
-
-    ButtonCorner.CornerRadius = UDim.new(0, 5)
-    ButtonCorner.Parent = ButtonFrame
-
-    -- Botão de Texto (Clicou na escrita já ativa)
-    TextBtn.Name = "Texto"
-    TextBtn.Parent = ButtonFrame
-    TextBtn.BackgroundTransparency = 1
-    TextBtn.Size = UDim2.new(1, -45, 1, 0)
-    TextBtn.Font = Enum.Font.SourceSans
-    TextBtn.Text = "  " .. nomeFuncao
-    TextBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-    TextBtn.TextSize = 13
-    TextBtn.TextXAlignment = Enum.TextXAlignment.Left
-
-    -- Status Indicador Pequeno (Fundo escuro com texto ON verde / OFF vermelho)
-    StatusIndicator.Name = "Status"
-    StatusIndicator.Parent = ButtonFrame
-    StatusIndicator.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
-    StatusIndicator.BackgroundTransparency = 0.3
-    StatusIndicator.BorderSizePixel = 0
-    StatusIndicator.Position = UDim2.new(1, -38, 0, 3)
-    StatusIndicator.Size = UDim2.new(0, 34, 1, -6) -- Tamanho menor e ajustado para dentro
-    StatusIndicator.Font = Enum.Font.SourceSansBold
-    StatusIndicator.Text = "OFF"
-    StatusIndicator.TextColor3 = Color3.fromRGB(240, 70, 70) -- Inicialmente Vermelho
-    StatusIndicator.TextSize = 11
-    StatusIndicator.TextXAlignment = Enum.TextXAlignment.Center
-
-    StatusCorner.CornerRadius = UDim.new(0, 4)
-    StatusCorner.Parent = StatusIndicator
-
-    -- Lógica de Ativação do Clique
-    TextBtn.MouseButton1Click:Connect(function()
-        Estado = not Estado
-        if Estado then
-            StatusIndicator.Text = "ON"
-            StatusIndicator.TextColor3 = Color3.fromRGB(70, 240, 70) -- Verde
-        else
-            StatusIndicator.Text = "OFF"
-            StatusIndicator.TextColor3 = Color3.fromRGB(240, 70, 70) -- Vermelho
-        end
+Topbar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
         
-        -- Executa a função de forma segura em uma thread separada
-        task.spawn(function()
-            local sucesso, erro = pcall(callback, Estado)
-            if not sucesso then
-                warn("Erro na função [" .. nomeFuncao .. "]:", erro)
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
             end
         end)
-    end)
-end
-
--- ====================================================================
--- [[ ESPAÇO PARA ADICIONAR SUAS FUNÇÕES (REMOTE / SCRIPTS ETC) ]]
--- Qualquer outra IA ou você pode apenas colocar o nome e a função abaixo:
--- ====================================================================
-
--- Função Inicial 1
-CriarBotao("Add Função 1", function(estado)
-    if estado then
-        print("Função 1 Ativada")
-    else
-        print("Função 1 Desativada")
     end
 end)
 
--- Função Inicial 2
-CriarBotao("Add Função 2", function(estado)
-    if estado then
-        print("Função 2 Ativada")
-    else
-        print("Função 2 Desativada")
+Topbar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
     end
 end)
 
--- Se você ou outra IA adicionar mais linhas a partir daqui, a interface
--- vai esticar a altura do fundo preto automaticamente para caber tudo!
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Lógica de Minimizar
+local isMinimized = false
+MinimizeBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    local targetSize = isMinimized and UDim2.new(0, 260, 0, 30) or UDim2.new(0, 260, 0, 180)
+    
+    TweenService:Create(MainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Size = targetSize
+    }):Play()
+end)
+
+-- Container dos Botões
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -20, 1, -40)
+Content.Position = UDim2.new(0, 10, 0, 35)
+Content.BackgroundTransparency = 1
+Content.Parent = MainFrame
+
+-- Botão Test
+local TestBtn = Instance.new("TextButton")
+TestBtn.Size = UDim2.new(1, 0, 0, 35)
+TestBtn.Position = UDim2.new(0, 0, 0, 10)
+TestBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 38)
+TestBtn.Text = "Função Test"
+TestBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+TestBtn.Font = Enum.Font.GothamSemibold
+TestBtn.TextSize = 13
+TestBtn.Parent = Content
+
+local TestCorner = Instance.new("UICorner")
+TestCorner.CornerRadius = UDim.new(0, 6)
+TestCorner.Parent = TestBtn
+
+TestBtn.MouseButton1Click:Connect(function()
+    print("[GOMES HUB]: Função Test executada com sucesso!")
+    -- Notificação na tela
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Gomes Hub",
+        Text = "Função Test Ativada!",
+        Duration = 3
+    })
+end)
+
+-- Botão Ativar Auto Execut
+local AutoExecBtn = Instance.new("TextButton")
+AutoExecBtn.Size = UDim2.new(1, 0, 0, 35)
+AutoExecBtn.Position = UDim2.new(0, 0, 0, 55)
+AutoExecBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0) -- Red Accent
+AutoExecBtn.Text = "Ativa Auto Execut"
+AutoExecBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoExecBtn.Font = Enum.Font.GothamBold
+AutoExecBtn.TextSize = 13
+AutoExecBtn.Parent = Content
+
+local AutoExecCorner = Instance.new("UICorner")
+AutoExecCorner.CornerRadius = UDim.new(0, 6)
+AutoExecCorner.Parent = AutoExecBtn
+
+-- Lógica de Salvar na pasta autoexec do Delta
+AutoExecBtn.MouseButton1Click:Connect(function()
+    if writefile then
+        -- Código que será salvo para executar automaticamente na próxima inicialização
+        local scriptToSave = [[
+-- Script Auto-Executado via Delta Executor
+loadstring(game:HttpGet("SUA_URL_AQUI_SE_FOR_RAW"))() 
+-- Ou insira o código direto aqui
+print("[GOMES HUB]: Carregado via AutoExec!")
+]]
+        
+        -- Salva o arquivo na pasta autoexec do executor
+        writefile("autoexec/GomesHubAutoExec.lua", scriptToSave)
+        
+        AutoExecBtn.Text = "Salvo no AutoExec!"
+        AutoExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 70)
+        
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "AutoExec Delta",
+            Text = "Script salvo na pasta autoexec com sucesso!",
+            Duration = 4
+        })
+    else
+        warn("Seu executor não suporta a função writefile.")
+    end
+end)
