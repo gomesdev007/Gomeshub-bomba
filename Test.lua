@@ -1,41 +1,35 @@
 local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local parentTarget = CoreGui or LocalPlayer:WaitForChild("PlayerGui")
+print("Carregando Script...") -- Isso aparecerá no console (F9) se rodar
 
 -- Limpeza de menus anteriores
-if parentTarget:FindFirstChild("MiniDarkMenu") then
-    parentTarget.MiniDarkMenu:Destroy()
+if PlayerGui:FindFirstChild("MiniDarkMenu") then
+    PlayerGui.MiniDarkMenu:Destroy()
 end
 
--- Criando a ScreenGui
+-- Criando a ScreenGui no PlayerGui (mais seguro)
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "MiniDarkMenu"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = parentTarget
+ScreenGui.Parent = PlayerGui
 
 -- Frame Principal
-local MainFrame = Instance.new("Frame")
+local MainFrame = Instance.new("Frame", ScreenGui)
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 180, 0, 26)
-MainFrame.Position = UDim2.new(0, 35, 0, 5)
+MainFrame.Position = UDim2.new(0.5, -90, 0, 50) -- Centralizado no topo
 MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true
-MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner", MainFrame)
 MainCorner.CornerRadius = UDim.new(0, 6)
 
-local UIStroke = Instance.new("UIStroke", MainFrame)
-UIStroke.Color = Color3.fromRGB(35, 35, 35)
-UIStroke.Thickness = 1
-
--- Botão de Abrir/Fechar
+-- Título
 local TitleButton = Instance.new("TextButton", MainFrame)
-TitleButton.Name = "TitleButton"
 TitleButton.Size = UDim2.new(1, 0, 1, 0)
 TitleButton.BackgroundTransparency = 1
 TitleButton.Text = "  Meu Menu"
@@ -44,36 +38,17 @@ TitleButton.TextSize = 13
 TitleButton.Font = Enum.Font.SourceSansBold
 TitleButton.TextXAlignment = Enum.TextXAlignment.Left
 
-local ArrowLabel = Instance.new("TextLabel", TitleButton)
-ArrowLabel.Name = "Arrow"
-ArrowLabel.Size = UDim2.new(0, 20, 1, 0)
-ArrowLabel.Position = UDim2.new(1, -22, 0, 0)
-ArrowLabel.BackgroundTransparency = 1
-ArrowLabel.Text = "▼"
-ArrowLabel.TextColor3 = Color3.fromRGB(120, 120, 120)
-ArrowLabel.TextSize = 10
-ArrowLabel.Font = Enum.Font.SourceSansBold
-
 -- Container das Opções
 local ContentFrame = Instance.new("Frame", MainFrame)
-ContentFrame.Name = "ContentFrame"
 ContentFrame.Size = UDim2.new(1, 0, 0, 0)
 ContentFrame.Position = UDim2.new(0, 0, 1, 4)
 ContentFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 ContentFrame.BorderSizePixel = 0
 ContentFrame.Visible = false
-
-local ContentCorner = Instance.new("UICorner", ContentFrame)
-ContentCorner.CornerRadius = UDim.new(0, 6)
-
-local ContentStroke = Instance.new("UIStroke", ContentFrame)
-ContentStroke.Color = Color3.fromRGB(35, 35, 35)
-ContentStroke.Thickness = 1
+Instance.new("UICorner", ContentFrame).CornerRadius = UDim.new(0, 6)
 
 local UIListLayout = Instance.new("UIListLayout", ContentFrame)
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 4)
-
 local UIPadding = Instance.new("UIPadding", ContentFrame)
 UIPadding.PaddingTop = UDim.new(0, 6)
 UIPadding.PaddingBottom = UDim.new(0, 6)
@@ -84,21 +59,14 @@ UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     ContentFrame.Size = UDim2.new(1, 0, 0, UIListLayout.AbsoluteContentSize.Y + 12)
 end)
 
-local isOpen = false
 TitleButton.MouseButton1Click:Connect(function()
-    isOpen = not isOpen
-    ContentFrame.Visible = isOpen
-    ArrowLabel.Text = isOpen and "▲" or "▼"
+    ContentFrame.Visible = not ContentFrame.Visible
 end)
 
----
--- Função Auxiliar para Criar as Opções
----
+--- Função Auxiliar
 local function CriarFuncao(nome, callback)
     local state = false
-
     local Row = Instance.new("Frame", ContentFrame)
-    Row.Name = nome
     Row.Size = UDim2.new(1, 0, 0, 22)
     Row.BackgroundTransparency = 1
 
@@ -109,95 +77,42 @@ local function CriarFuncao(nome, callback)
     Label.TextColor3 = Color3.fromRGB(200, 200, 200)
     Label.TextSize = 13
     Label.Font = Enum.Font.SourceSansSemibold
-    Label.TextXAlignment = Enum.TextXAlignment.Left
 
     local Box = Instance.new("TextButton", Row)
-    Box.Name = "Box"
     Box.Size = UDim2.new(0, 16, 0, 16)
     Box.Position = UDim2.new(1, -16, 0.5, -8)
     Box.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    Box.BorderSizePixel = 0
     Box.Text = ""
+    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 4)
 
-    local BoxCorner = Instance.new("UICorner", Box)
-    BoxCorner.CornerRadius = UDim.new(0, 4)
-
-    local BoxStroke = Instance.new("UIStroke", Box)
-    BoxStroke.Color = Color3.fromRGB(45, 45, 45)
-    BoxStroke.Thickness = 1
-
-    local function atualizarVisual()
-        Box.BackgroundColor3 = state and Color3.fromRGB(220, 30, 30) or Color3.fromRGB(0, 0, 0)
-    end
-
-    local function desligar()
-        if state then
-            state = false
-            atualizarVisual()
-            pcall(callback, false, desligar)
-        end
-    end
-
+    local function desligar() state = false Box.BackgroundColor3 = Color3.fromRGB(0, 0, 0) end
+    
     Box.MouseButton1Click:Connect(function()
         state = not state
-        atualizarVisual()
+        Box.BackgroundColor3 = state and Color3.fromRGB(220, 30, 30) or Color3.fromRGB(0, 0, 0)
         pcall(callback, state, desligar)
     end)
 end
 
-----------------------------------------------------
--- REGISTRO DAS FUNÇÕES NO MENU
-----------------------------------------------------
-
--- 1. Função Test (Teleporta, aguarda 10 segundos e desliga o botão)
-local PosicaoTest = Vector3.new(2323.06, -11.65, 7452.02)
+-- REGISTRO
 local testThread = nil
-
 CriarFuncao("Test", function(ativo, desligar)
     if ativo then
-        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-        local hrp = character:FindFirstChild("HumanoidRootPart")
-
+        local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
         if hrp then
-            hrp.CFrame = CFrame.new(PosicaoTest)
-            
+            hrp.CFrame = CFrame.new(2323.06, -11.65, 7452.02)
             if testThread then task.cancel(testThread) end
-
-            testThread = task.spawn(function()
-                task.wait(10)
-                desligar() -- Desativa a seleção do botão automaticamente após 10 segundos
-                testThread = nil
-            end)
+            testThread = task.spawn(function() task.wait(10) desligar() end)
         end
     else
-        if testThread then
-            task.cancel(testThread)
-            testThread = nil
-        end
+        if testThread then task.cancel(testThread) end
     end
 end)
 
--- 2. Função Ativa Auto Exec
-local NOME_ARQUIVO = "autoexec/MeuScriptAutoExec.lua"
-local ScriptParaAutoExec = [[
-print("Script rodado via AutoExec do Delta!")
-]]
-
-CriarFuncao("Ativa auto execut", function(estado)
-    if not writefile or not delfile or not isfile then
-        warn("Seu executor não suporta manipuladores de arquivo (writefile/delfile).")
-        return
-    end
-
-    if estado then
-        pcall(function()
-            writefile(NOME_ARQUIVO, ScriptParaAutoExec)
-        end)
-    else
-        if isfile(NOME_ARQUIVO) then
-            pcall(function()
-                delfile(NOME_ARQUIVO)
-            end)
-        end
-    end
+CriarFuncao("Ativa auto execut", function(estado, desligar)
+    if not writefile then warn("Executor não suporta writefile") return end
+    if estado then writefile("autoexec/MeuScriptAutoExec.lua", "-- AutoExec Ativo")
+    else if isfile("autoexec/MeuScriptAutoExec.lua") then delfile("autoexec/MeuScriptAutoExec.lua") end end
 end)
+
+print("Script carregado com sucesso!")
