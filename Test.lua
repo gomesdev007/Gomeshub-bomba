@@ -3,6 +3,9 @@
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer
 
 -- Evita duplicar a GUI se executar mais de uma vez
 if CoreGui:FindFirstChild("GomesMiniGui") then
@@ -119,7 +122,7 @@ local TestBtn = Instance.new("TextButton")
 TestBtn.Size = UDim2.new(1, 0, 0, 35)
 TestBtn.Position = UDim2.new(0, 0, 0, 10)
 TestBtn.BackgroundColor3 = Color3.fromRGB(25, 20, 38)
-TestBtn.Text = "Função Test"
+TestBtn.Text = "Função Test (Teleportes)"
 TestBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 TestBtn.Font = Enum.Font.GothamSemibold
 TestBtn.TextSize = 13
@@ -129,14 +132,37 @@ local TestCorner = Instance.new("UICorner")
 TestCorner.CornerRadius = UDim.new(0, 6)
 TestCorner.Parent = TestBtn
 
+-- Lógica do Teleporte da Função Test
 TestBtn.MouseButton1Click:Connect(function()
-    print("[GOMES HUB]: Função Test executada com sucesso!")
-    -- Notificação na tela
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "Gomes Hub",
-        Text = "Função Test Ativada!",
-        Duration = 3
-    })
+    task.spawn(function()
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local rootPart = character:FindFirstChild("HumanoidRootPart")
+        
+        if rootPart then
+            -- Posição 1
+            local Pos1 = Vector3.new(0.45, 4.13, -81.53)
+            rootPart.CFrame = CFrame.new(Pos1)
+            
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Gomes Hub",
+                Text = "Teleportado para a Posição 1!",
+                Duration = 2
+            })
+            
+            -- Aguarda 3 segundos
+            task.wait(3)
+            
+            -- Posição 2
+            local Pos2 = Vector3.new(2323.06, -11.65, 7452.02)
+            rootPart.CFrame = CFrame.new(Pos2)
+            
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "Gomes Hub",
+                Text = "Teleportado para a Posição 2!",
+                Duration = 2
+            })
+        end
+    end)
 end)
 
 -- Botão Ativar Auto Execut
@@ -157,16 +183,12 @@ AutoExecCorner.Parent = AutoExecBtn
 -- Lógica de Salvar na pasta autoexec do Delta
 AutoExecBtn.MouseButton1Click:Connect(function()
     if writefile then
-        -- Código que será salvo para executar automaticamente na próxima inicialização
-        local scriptToSave = [[
--- Script Auto-Executado via Delta Executor
-loadstring(game:HttpGet("SUA_URL_AQUI_SE_FOR_RAW"))() 
--- Ou insira o código direto aqui
-print("[GOMES HUB]: Carregado via AutoExec!")
+        -- Salva o próprio código dentro da pasta autoexec do executor
+        local scriptContent = [[
+-- Script Auto-Executado via Delta
+loadstring(game:HttpGet("SUA_URL_AQUI_SE_FOR_RAW"))()
 ]]
-        
-        -- Salva o arquivo na pasta autoexec do executor
-        writefile("autoexec/GomesHubAutoExec.lua", scriptToSave)
+        writefile("autoexec/GomesHubAutoExec.lua", scriptContent)
         
         AutoExecBtn.Text = "Salvo no AutoExec!"
         AutoExecBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 70)
