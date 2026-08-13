@@ -1,0 +1,364 @@
+-- [[ GOMES HUB V2 - FLUENT UI LIGHT EDITION ]]
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+-- Force Light Theme
+Fluent:SetTheme("Light")
+
+-- Window Creation
+local Window = Fluent:CreateWindow({
+    Title = "Gomes Hub V2",
+    SubTitle = "by Gomes",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = false,
+    Theme = "Light",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+if Fluent.UseTheme then
+    Fluent:UseTheme("Light")
+end
+
+-- Navigation Tabs
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
+    Teleports = Window:AddTab({ Title = "Teleports", Icon = "map-pin" }),
+    Movement = Window:AddTab({ Title = "Movement", Icon = "user" }),
+    AutoPlace = Window:AddTab({ Title = "Auto Place", Icon = "box" }),
+    Automation = Window:AddTab({ Title = "Automation", Icon = "play" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+
+local Options = Fluent.Options
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local LocalPlayer = Players.LocalPlayer
+
+---------------------------------------------------------
+-- MAIN TAB
+---------------------------------------------------------
+Tabs.Main:AddParagraph({
+    Title = "System Management",
+    Content = "Core utilities for script execution and autoexec setup."
+})
+
+Tabs.Main:AddButton({
+    Title = "Install AutoExecute Script",
+    Description = "Saves core loader to the executor's autoexec directory",
+    Callback = function()
+        if writefile then
+            local codeToSave = [[
+-- Gomes Hub AutoExec Loader
+print("[GOMES HUB]: Executed via AutoExec")
+]]
+            pcall(function() writefile("../autoexec/GomesHubAutoExec.lua", codeToSave) end)
+            pcall(function() writefile("autoexec/GomesHubAutoExec.lua", codeToSave) end)
+        end
+    end
+})
+
+---------------------------------------------------------
+-- TELEPORTS TAB
+---------------------------------------------------------
+Tabs.Teleports:AddParagraph({
+    Title = "Map & Sequence Teleports",
+    Content = "Teleport directly to game locations or execute automated sequences."
+})
+
+-- Teleport Sequence
+Tabs.Teleports:AddButton({
+    Title = "Execute Sequence Teleport",
+    Description = "Teleports to Sequence Pos 1, waits 3 seconds, then teleports to Sequence Pos 2",
+    Callback = function()
+        task.spawn(function()
+            local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            
+            if rootPart then
+                rootPart.CFrame = CFrame.new(Vector3.new(0.45, 4.13, -81.53))
+                task.wait(3)
+                rootPart.CFrame = CFrame.new(Vector3.new(2323.06, -11.65, 7452.02))
+            end
+        end)
+    end
+})
+
+-- Individual Map Teleports
+local MapPositions = {
+    Classic = Vector3.new(-128.57, 2.00, -140.50),
+    BattleMode = Vector3.new(183.21, 6.11, -133.04),
+    Dungeon = Vector3.new(-329.92, 5.23, -197.33),
+    Fishing = Vector3.new(-234.40, -1.44, 97.60),
+    Raids = Vector3.new(243.81, 5.84, 91.24)
+}
+
+local function teleportTo(targetVector)
+    local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if rootPart then
+        rootPart.CFrame = CFrame.new(targetVector)
+    end
+end
+
+Tabs.Teleports:AddButton({
+    Title = "Teleport to Classic",
+    Description = "Location 1: Classic (-128.57, 2.00, -140.50)",
+    Callback = function()
+        teleportTo(MapPositions.Classic)
+    end
+})
+
+Tabs.Teleports:AddButton({
+    Title = "Teleport to Battle Mode",
+    Description = "Location 2: Battle Mode (183.21, 6.11, -133.04)",
+    Callback = function()
+        teleportTo(MapPositions.BattleMode)
+    end
+})
+
+Tabs.Teleports:AddButton({
+    Title = "Teleport to Dungeon",
+    Description = "Location 3: Dungeon (-329.92, 5.23, -197.33)",
+    Callback = function()
+        teleportTo(MapPositions.Dungeon)
+    end
+})
+
+Tabs.Teleports:AddButton({
+    Title = "Teleport to Fishing",
+    Description = "Location 4: Fishing (-234.40, -1.44, 97.60)",
+    Callback = function()
+        teleportTo(MapPositions.Fishing)
+    end
+})
+
+Tabs.Teleports:AddButton({
+    Title = "Teleport to Raids",
+    Description = "Location 5: Raids (243.81, 5.84, 91.24)",
+    Callback = function()
+        teleportTo(MapPositions.Raids)
+    end
+})
+
+---------------------------------------------------------
+-- MOVEMENT TAB
+---------------------------------------------------------
+Tabs.Movement:AddParagraph({
+    Title = "Player Physics Controls",
+    Content = "Adjust player speed and jump power parameters."
+})
+
+local WalkSpeedSlider = Tabs.Movement:AddSlider("WalkSpeedSlider", {
+    Title = "WalkSpeed",
+    Description = "Adjust Character WalkSpeed",
+    Default = 16,
+    Min = 16,
+    Max = 250,
+    Rounding = 0,
+    Callback = function(Value)
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = Value
+        end
+    end
+})
+
+local WalkSpeedToggle = Tabs.Movement:AddToggle("WalkSpeedToggle", {
+    Title = "Enable WalkSpeed Modifier",
+    Default = false
+})
+
+WalkSpeedToggle:OnChanged(function()
+    task.spawn(function()
+        while Options.WalkSpeedToggle.Value do
+            local character = LocalPlayer.Character
+            if character then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid.WalkSpeed = Options.WalkSpeedSlider.Value
+                end
+            end
+            task.wait(0.1)
+        end
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = 16
+            end
+        end
+    end)
+end)
+
+local JumpPowerSlider = Tabs.Movement:AddSlider("JumpPowerSlider", {
+    Title = "JumpPower",
+    Description = "Adjust Character JumpPower",
+    Default = 50,
+    Min = 50,
+    Max = 300,
+    Rounding = 0,
+    Callback = function(Value)
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.UseJumpPower = true
+            humanoid.JumpPower = Value
+        end
+    end
+})
+
+local JumpPowerToggle = Tabs.Movement:AddToggle("JumpPowerToggle", {
+    Title = "Enable JumpPower Modifier",
+    Default = false
+})
+
+JumpPowerToggle:OnChanged(function()
+    task.spawn(function()
+        while Options.JumpPowerToggle.Value do
+            local character = LocalPlayer.Character
+            if character then
+                local humanoid = character:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    humanoid.UseJumpPower = true
+                    humanoid.JumpPower = Options.JumpPowerSlider.Value
+                end
+            end
+            task.wait(0.1)
+        end
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.JumpPower = 50
+            end
+        end
+    end)
+end)
+
+---------------------------------------------------------
+-- AUTO PLACE TAB
+---------------------------------------------------------
+Tabs.AutoPlace:AddParagraph({
+    Title = "Automated Unit Deployment",
+    Content = "Executes sequential unit placement using predefined coordinates and fixed delays."
+})
+
+local TowerPositions = {
+    [1] = Vector3.new(-231.43, 0.39, -317.83),
+    [2] = Vector3.new(-240.01, 0.34, -322.49),
+    [3] = Vector3.new(-237.41, -2.03, -303.31),
+    [4] = Vector3.new(-247.93, -2.08, -312.26),
+    [5] = Vector3.new(-262.38, -1.58, -324.84),
+}
+
+local function getPlayerMoney()
+    local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+    if leaderstats then
+        local money = leaderstats:FindFirstChild("Money") 
+            or leaderstats:FindFirstChild("Coins") 
+            or leaderstats:FindFirstChild("Cash")
+            or leaderstats:FindFirstChild("Gems")
+        if money then return money.Value end
+    end
+    return nil
+end
+
+local isPlacing = false
+
+Tabs.AutoPlace:AddButton({
+    Title = "Start Automated Unit Placement",
+    Description = "Deploys 5 units sequentially with 2-second intervals between each",
+    Callback = function()
+        if isPlacing then return end
+        isPlacing = true
+
+        task.spawn(function()
+            local placeEvent = ReplicatedStorage:FindFirstChild("GenericModules")
+                and ReplicatedStorage.GenericModules:FindFirstChild("Service")
+                and ReplicatedStorage.GenericModules.Service:FindFirstChild("Network")
+                and ReplicatedStorage.GenericModules.Service.Network:FindFirstChild("PlayerPlaceTower")
+
+            if placeEvent then
+                local unitID = "5409636515:14"
+                local fixedDelay = 2
+                local maxRetries = 3
+
+                for index, pos in ipairs(TowerPositions) do
+                    local initialMoney = getPlayerMoney()
+                    local placedSuccess = false
+
+                    for attempt = 1, maxRetries do
+                        placeEvent:FireServer(unitID, pos, 0)
+
+                        task.wait(fixedDelay)
+
+                        local currentMoney = getPlayerMoney()
+                        if initialMoney and currentMoney then
+                            if currentMoney <= 0 then
+                                isPlacing = false
+                                return
+                            end
+                        end
+
+                        placedSuccess = true
+                        break
+                    end
+                end
+            end
+
+            isPlacing = false
+        end)
+    end
+})
+
+---------------------------------------------------------
+-- AUTOMATION TAB
+---------------------------------------------------------
+Tabs.Automation:AddParagraph({
+    Title = "Wave Controls",
+    Content = "Automate wave progression and game flow."
+})
+
+local autoSkipToggle = Tabs.Automation:AddToggle("AutoSkipWave", {
+    Title = "Auto Skip Wave",
+    Default = false
+})
+
+autoSkipToggle:OnChanged(function()
+    task.spawn(function()
+        while Options.AutoSkipWave.Value do
+            local skipEvent = ReplicatedStorage:FindFirstChild("Modules")
+                and ReplicatedStorage.Modules:FindFirstChild("GlobalInit")
+                and ReplicatedStorage.Modules.GlobalInit:FindFirstChild("RemoteEvents")
+                and ReplicatedStorage.Modules.GlobalInit.RemoteEvents:FindFirstChild("PlayerReadyForNextWave")
+
+            if skipEvent then
+                skipEvent:FireServer()
+            end
+
+            task.wait(1)
+        end
+    end)
+end)
+
+---------------------------------------------------------
+-- MANAGERS CONFIGURATION
+---------------------------------------------------------
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+
+InterfaceManager:SetFolder("GomesHub")
+SaveManager:SetFolder("GomesHub/configs")
+
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+
+Window:SelectTab(1)
+SaveManager:LoadAutoloadConfig()
